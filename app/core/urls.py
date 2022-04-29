@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.urls import path
 from rest_framework import routers
-from .views import (registeration_view, assets_listView, ListFavouriteApiView, AddFavouriteApiView)
+from .views import (registeration_view, assets_listView, fav_coin_list, fav_view)
 from rest_framework.authtoken.views import obtain_auth_token
 
 router = routers.DefaultRouter()
@@ -25,6 +25,6 @@ urlpatterns = [
     path('register', registeration_view, name="register"),
     path('login', obtain_auth_token, name="login"),
     path('assets-list', assets_listView, name="assets"),
-    path('fav-coin-list', ListFavouriteApiView.as_view()),
-    path('add-coin-fav',  AddFavouriteApiView.as_view())
+    path('fav-coin-list', fav_coin_list),
+    path('fav_view', fav_view, name="fav-view"),
 ]
