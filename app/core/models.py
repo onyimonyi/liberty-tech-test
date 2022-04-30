@@ -103,4 +103,4 @@ class Favourite(models.Model):
     coin = models.ManyToManyField(Coin, related_name='favcoin')
 
     def __str__(self):
-        return f"{self.user}"
+        return f"{self.user}'s Favourite"

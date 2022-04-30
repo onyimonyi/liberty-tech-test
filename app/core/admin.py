@@ -29,7 +29,30 @@ class UserAdmin(BaseUserAdmin):
     filter_horizontal = ()
 
 
+class FavouriteAdmin(admin.ModelAdmin):
+    list_display = [
+        'user',
+        'favourite'
+
+    ]
+    list_display_links = [
+        'user',
+    ]
+
+    list_filter = [
+        'user',
+    ]
+
+    search_fields = [
+        'user__email',
+
+    ]
+
+    def favourite(self, obj):
+        return "\n".join([a.name for a in obj.coin.all()])
+
+
 # Register your models here.
 admin.site.register(User, UserAdmin)
 admin.site.register(Coin)
-admin.site.register(Favourite)
+admin.site.register(Favourite, FavouriteAdmin)

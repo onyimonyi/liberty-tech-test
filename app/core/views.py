@@ -1,11 +1,15 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import render
+from django.conf import settings
+
+API_KEY = settings.API_KEY
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from .serializers import RegistrationSerializer, AssetsListSerializer, AddCoinActionSerializer, AddCoinSerializer,AddViewSerializer
+from .serializers import RegistrationSerializer, AssetsListSerializer, AddCoinActionSerializer, AddCoinSerializer, \
+    AddViewSerializer
 from rest_framework.authtoken.models import Token
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
@@ -38,7 +42,7 @@ def registeration_view(request, *args, **kwargs):
 @permission_classes([IsAuthenticated])
 def assets_listView(request, *args, **kwargs):
     url = 'https://rest.coinapi.io/v1/assets'
-    headers = {'X-CoinAPI-Key': '432DCB67-C825-4A65-B9A7-E5D8260C58A5'}
+    headers = {'X-CoinAPI-Key': API_KEY}
     response = requests.get(url, headers=headers)
     re = response.json()
     data = []
@@ -48,7 +52,7 @@ def assets_listView(request, *args, **kwargs):
         print('i : ' + str(i))
         dict = {
             "name": i["name"],
-            "volume": i["volume_1hrs_usd"],
+            "volume": i["volume_1hrs_usd"]
         }
         data.append(dict)  # ADDING DICTIONARY TO PARENT DICTIONARY
         index = index + 1
@@ -62,7 +66,7 @@ def assets_listView(request, *args, **kwargs):
 @api_view(['GET', 'POST'])
 # @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
-def fav_coin_list(request,  *args, **kwargs):
+def add_coin_to_fav(request, *args, **kwargs):
     serializer = AddCoinActionSerializer(data=request.data)
     if serializer.is_valid(raise_exception=True):
         data = serializer.validated_data
@@ -74,14 +78,12 @@ def fav_coin_list(request,  *args, **kwargs):
             favourite, created = Favourite.objects.get_or_create(
                 user=request.user,
             )
+            # action are "add" or "remove"
             if action == "add":
                 if obj in favourite.coin.all():
-                    print(obj)
-                    print(favourite)
                     serializer = AddCoinSerializer(obj)
                     json_response = {}
-                    json_response["message"] = "{} Already  in favourite".format(obj),
-                    json_response["username"] = request.user.full_name,
+                    json_response["message"] = F"hi {request.user.full_name} {obj} Already  in favourite",
                     json_response["coin"] = serializer.data
                     return Response(json_response, status=200)
                 favourite.coin.add(obj)
@@ -99,10 +101,8 @@ def fav_coin_list(request,  *args, **kwargs):
                 json_response["username"] = request.user.full_name,
                 json_response["coin"] = serializer.data
                 return Response(json_response, status=200)
-        return Response({"Not found"}, status=200)
+        return Response({"Not found"}, status=404)
     return Response({}, status=400)
-
-
 
 
 def get_paginated_queryset_response(qs, request):
@@ -110,21 +110,23 @@ def get_paginated_queryset_response(qs, request):
     paginator.page_size = 4
     paginated_qs = paginator.paginate_queryset(qs, request, )
     user = request.user
-    json_response= {}
+    json_response = {}
     serializer = AddViewSerializer(paginated_qs, many=True)
-    json_response["message"] =F"Welcome back {user.full_name} thanks for using our platform"
-    json_response["username"]= user.full_name,
+    json_response["message"] = F"Welcome back {user.full_name} thanks for using our platform"
+
     json_response["subscribed_favourites"] = serializer.data
 
     return paginator.get_paginated_response(json_response)
-
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fav_view(request, *args, **kwargs):
     qs = Favourite.objects.filter(user=request.user)
-    qs=qs[0]
-    data=qs.coin.all()
-    return get_paginated_queryset_response(data, request)
-
+    if qs:
+        qs = qs[0]
+        data = qs.coin.all()
+        return get_paginated_queryset_response(data, request)
+    json_response = {}
+    json_response["message"] = F"No coin in your favourite, please add coin"
+    return Response(json_response, status=404)

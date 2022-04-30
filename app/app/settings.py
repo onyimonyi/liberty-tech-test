@@ -78,6 +78,7 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 ADD_COIN_ACTION = ["add", "remove"]
+API_KEY = 'YOUR_API_KEY'
 
 DATABASES = {
     'default': {
